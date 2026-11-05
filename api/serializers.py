@@ -18,18 +18,22 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        images= ProductImageSerializer(many=True, read_only=True)
-        uploaded_images = serializers.ListField(
-        child= serializers.ImageField(max_length=10000,allow_empty_file=False, use_url=False)
-        write_only= True
-        )
+    images = ProductImageSerializer(many=True, read_only=True)
+    uploaded_images = serializers.ListField(
+        child=serializers.ImageField(max_length=10000, allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=False,
+    )
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'category', 'slug', 'inventory', 'old_price', 'price', 'images']
+        fields = [
+            'id', 'name', 'description', 'category', 'slug', 'inventory',
+            'old_price', 'price', 'images', 'uploaded_images',
+        ]
 
     def create(self, validated_data): 
-        uploaded_images = validated_data.pop('uploaded_images') 
+        uploaded_images = validated_data.pop('uploaded_images', [])
         product = Product.objects.create(**validated_data)
         for image in uploaded_images:
             newproductimage = ProductImage.objects.create(product=product, image=image)
