@@ -155,7 +155,8 @@ class CartViewSet(CreateModelMixin,RetrieveModelMixin, DestroyModelMixin, Generi
 class CarItemViewSet(ModelViewSet):
     queryset = Cartitems.objects.all()
     serializer_class = CartItemSerializer
-
+def get_queryset(self):
+    return Cartitems.objects.filter(cart_id=self.kwargs['cart_pk'])
 
 # class ApiCategories(RetrieveUpdateDestroyAPIVIEW):
 #    queryset = Category.objects.all()
