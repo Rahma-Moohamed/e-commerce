@@ -8,6 +8,11 @@
   input{
     height: 40px;
   }
+
+  .errorlist {
+    color: #b02a37;
+    padding-left: 1.25rem;
+  }
   
 </style><form method="POST">
 <div class = 'container' style = 'width: 60%'>
@@ -15,12 +20,17 @@
     <div class="row">
       <h1>Create Account</h1>
       {% csrf_token %}
+      {{ form.non_field_errors }}
       
       {% for field in form %}
       
         <div class="col-6">
           {{field.label}}
           {{field}}
+          {{ field.errors }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text|safe }}</div>
+          {% endif %}
         </div>
         {% endfor %}
         <button type="submit" class = 'btn btn-lg btn-info'>Create Account</button>

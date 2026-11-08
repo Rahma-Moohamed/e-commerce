@@ -69,7 +69,7 @@ def detail(request, slug):
 
 def cart(request):
     cart = Cart.objects.get(session_id = request.session['nonuser'], completed=False)
-    cartitems = cart.cartitems_set.all()
+    cartitems = cart.items.all()
     context = {'cart':cart, 'cartitems': cartitems}
     return render(request, 'storeapp/cart.html', context)
 
@@ -137,7 +137,7 @@ def deleteCartitems(request):
 def checkout(request):
     form = None
     cart = Cart.objects.get(session_id = request.session['nonuser'], completed=False)
-    cartitems = cart.cartitems_set.all()
+    cartitems = cart.items.all()
     customer = request.user.customer
     customer_address = Address.objects.filter(customer=customer)
     if customer_address:

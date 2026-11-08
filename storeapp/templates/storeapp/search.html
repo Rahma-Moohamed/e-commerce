@@ -12,7 +12,13 @@
           <a href="{% url 'detail' product.slug %}">
             <div class="card position-relative" style="width: 100%">
               <!-- <span class="discount"> -30% </span> -->
-              <img src="{{product.image.url}}" class="card-img-top" alt="..." />
+              {% if product.image %}
+                <img src="{{product.image.url}}" class="card-img-top" alt="{{product.name}}" />
+              {% else %}
+                <div class="card-img-top d-flex align-items-center justify-content-center bg-light text-muted" style="height: 180px">
+                  No image available
+                </div>
+              {% endif %}
               <div class="card-body">
                 <p class="card-title">{{product.name}}</p>
                 <h4 class="card-text">${{ product.price|floatformat:2 }}</h4>

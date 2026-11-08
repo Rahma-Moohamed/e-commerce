@@ -35,7 +35,7 @@
     {% for order in orders %}
       {% if order.completed == True %}
       <h4>Cart ID: {{order.cart_id}} </h4>
-        {% for order in order.cartitems_set.all %}
+        {% for order in order.items.all %}
         
       <div class="minicontainer">
         <div class="row">

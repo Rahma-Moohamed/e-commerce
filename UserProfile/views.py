@@ -1,4 +1,5 @@
 import re
+import uuid
 from django.contrib import messages
 from django.shortcuts import render, redirect
 
@@ -24,7 +25,11 @@ def signup(request):
     return render(request, 'UserProfile/signup.html', context)
 
 def signin(request):
-    cart = Cart.objects.get(session_id = request.session['nonuser'], completed=False)
+    session_id = request.session.get('nonuser')
+    if session_id is None:
+        session_id = str(uuid.uuid4())
+        request.session['nonuser'] = session_id
+    cart, _ = Cart.objects.get_or_create(session_id=session_id, completed=False)
     if request.method == 'POST':
         email = request.POST['email']
         password = request.POST['password']
