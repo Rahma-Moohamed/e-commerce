@@ -106,6 +106,39 @@ class Cartitems(models.Model):
         total = self.quantity * self.product.price
         
         return total
+
+
+class Order(models.Model):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='orders',
+    )
+    cart = models.OneToOneField(
+        Cart,
+        on_delete=models.PROTECT,
+        related_name='order',
+    )
+    placed_at = models.DateTimeField(auto_now_add=True)
+    pending_status = models.BooleanField(default=True)
+
+    def __str__(self):
+        return str(self.pk)
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    quantity = models.PositiveSmallIntegerField()
+
+
+class Profile(models.Model):
+    name = models.CharField(max_length=50)
+    bio = models.TextField()
+    image = models.ImageField(upload_to='img', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
     
    
 

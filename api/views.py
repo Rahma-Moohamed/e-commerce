@@ -109,20 +109,30 @@
 
 
 
-from urllib import request
-from django.shortcuts import get_object_or_404, render
-from rest_framework.decorators import api_view
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
-from rest_framework.status import HTTP_204_NO_CONTENT
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.mixins import CreateModelMixin,RetrieveModelMixin,DestroyModelMixin
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
-from .filter import *
-from storeapp.models import *
-from .serializers import *
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.status import HTTP_201_CREATED
+
+from .filter import ProductFilter
+from storeapp.models import Cart, Cartitems, Category, Order, Product, Profile, Review
+from .serializers import (
+    AddCartItemSerializer,
+    CartItemSerializer,
+    CartSerializer,
+    CategorySerializer,
+    CreateOrderSerializer,
+    OrderSerializer,
+    ProductSerializer,
+    ProfileSerializer,
+    ReviewSerializer,
+    UpdateCartItemSerializer,
+)
 
 class ProductViewSet(ModelViewSet):
    queryset = Product.objects.all()
@@ -138,23 +148,73 @@ class CategoryViewSet(ModelViewSet):
    serializer_class = CategorySerializer
 
 class ReviewViewSet(ModelViewSet):
-   #queryset = Review.objects.all()
-   serializer_class = ReviewSerializer
+    serializer_class = ReviewSerializer
 
-   def get_serializer_context(self):
-      return { 'product_id': self.kwargs['product_pk']}
-   
-   def get_queryset(self):
-         return Review.objects.filter(product_id=self.kwargs['product_pk'])
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['product_id'] = self.kwargs['product_pk']
+        return context
 
-class CartViewSet(CreateModelMixin,RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
+    def get_queryset(self):
+        return Review.objects.filter(product_id=self.kwargs['product_pk'])
+
+class CartViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
 
-class CarItemViewSet(ModelViewSet):
-    queryset = Cartitems.objects.all()
-    serializer_class = CartItemSerializer
+class CartItemViewSet(ModelViewSet):
+    http_method_names = ['get', 'patch', 'delete', 'post']
+    lookup_field = 'pk'
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return AddCartItemSerializer
+        if self.action in ('update', 'partial_update'):
+            return UpdateCartItemSerializer
+        return CartItemSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['cart_id'] = self.kwargs['cart_pk']
+        return context
+
+    def get_queryset(self):
+        return Cartitems.objects.filter(
+            cart_id=self.kwargs['cart_pk'],
+        ).select_related('product', 'cart')
+
+
+class OrderViewSet(ModelViewSet):
+    queryset = Order.objects.select_related('owner', 'cart').prefetch_related(
+        'items__product'
+    )
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'head', 'options']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return CreateOrderSerializer
+        return OrderSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return self.queryset
+        return self.queryset.filter(owner=user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        output = OrderSerializer(order, context=self.get_serializer_context())
+        return Response(output.data, status=HTTP_201_CREATED)
+
+
+class ProfileViewSet(ModelViewSet):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileSerializer
+    parser_classes = (MultiPartParser, FormParser)
 
 
 # class ApiCategories(RetrieveUpdateDestroyAPIVIEW):
